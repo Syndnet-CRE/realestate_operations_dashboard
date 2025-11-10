@@ -9,6 +9,7 @@ import PropertyAcquisitionWorkflow from "pages/property-acquisition-workflow";
 import FinancialAnalyticsDashboard from "pages/financial-analytics-dashboard";
 import ListingManagementHub from "pages/listing-management-hub";
 import DealDetailManagement from "pages/deal-detail-management";
+import GitHubRepository from "pages/github-repository";
 import NotFound from "pages/NotFound";
 
 const Routes = () => {
@@ -25,6 +26,7 @@ const Routes = () => {
         <Route path="/financial-analytics-dashboard" element={<FinancialAnalyticsDashboard />} />
         <Route path="/listing-management-hub" element={<ListingManagementHub />} />
         <Route path="/deal-detail-management" element={<DealDetailManagement />} />
+        <Route path="/github-repository" element={<GitHubRepository />} />
         <Route path="*" element={<NotFound />} />
       </RouterRoutes>
       </ErrorBoundary>
