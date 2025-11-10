@@ -4,6 +4,7 @@ import viteTsconfigPaths from 'vite-tsconfig-paths';
 import path from 'path';
 
 export default defineConfig({
+  base: '/realestate_operations_dashboard/',
   plugins: [
     react(),
     viteTsconfigPaths()
@@ -18,5 +19,9 @@ export default defineConfig({
   server: {
     port: 5173,
     open: false
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true
   }
 });
