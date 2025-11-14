@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Repository Viewer - UI Preview</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* Header */
+        .header {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 16px;
+        }
+        .repo-info { flex: 1; }
+        .repo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            margin-right: 12px;
+            vertical-align: middle;
+        }
+        .repo-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0f172a;
+            display: inline;
+        }
+        .repo-owner { color: #64748b; }
+        .repo-desc {
+            color: #475569;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+        .stats {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #64748b;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .stat-item:hover { color: #6366f1; }
+        .stat-item strong { color: #0f172a; }
+        .topics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .topic {
+            background: #eef2ff;
+            color: #4f46e5;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            border: 1px solid #c7d2fe;
+        }
+
+        /* Navigation Tabs */
+        .tabs {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px 12px 0 0;
+            padding: 0 24px;
+            margin-bottom: 0;
+            display: flex;
+            gap: 32px;
+        }
+        .tab {
+            padding: 16px 0;
+            border-bottom: 2px solid transparent;
+            color: #64748b;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab.active {
+            border-bottom-color: #6366f1;
+            color: #6366f1;
+        }
+        .tab:hover { color: #1e293b; }
+        .badge {
+            background: #e2e8f0;
+            color: #475569;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 24px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            height: fit-content;
+        }
+        .sidebar-header {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            padding: 16px 24px;
+            color: white;
+            font-weight: 700;
+            font-size: 16px;
+        }
+        .sidebar-content { padding: 24px; }
+        .info-item {
+            margin-bottom: 16px;
+            display: flex;
+            gap: 12px;
+        }
+        .info-icon {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+        }
+        .info-label {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .info-value {
+            font-size: 14px;
+            color: #0f172a;
+            font-weight: 600;
+        }
+        .divider {
+            border-top: 1px solid #e2e8f0;
+            margin: 24px 0;
+        }
+        .contributors {
+            display: flex;
+            margin-top: 16px;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            border: 2px solid white;
+            margin-left: -8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .avatar:first-child { margin-left: 0; }
+        .avatar.more {
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 12px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
+            width: 75%;
+        }
+
+        /* File Browser */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .card-header {
+            background: #f8fafc;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-title {
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #6366f1;
+            font-size: 14px;
+        }
+        .file-list { }
+        .file-item {
+            padding: 16px 24px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .file-item:hover { background: #f8fafc; }
+        .file-item:last-child { border-bottom: none; }
+        .file-icon { width: 20px; height: 20px; }
+        .file-name {
+            flex: 1;
+            font-weight: 500;
+            color: #0f172a;
+        }
+        .file-meta {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        /* Commits */
+        .commit-item {
+            padding: 16px 24px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .commit-item:last-child { border-bottom: none; }
+        .commit-header {
+            display: flex;
+            gap: 16px;
+            align-items: start;
+        }
+        .commit-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .commit-content { flex: 1; }
+        .commit-message {
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 4px;
+        }
+        .commit-desc {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .commit-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: #64748b;
+        }
+        .commit-stats {
+            text-align: right;
+        }
+        .commit-hash {
+            background: #f1f5f9;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            color: #475569;
+            margin-bottom: 4px;
+        }
+        .commit-changes {
+            font-size: 12px;
+        }
+        .additions { color: #10b981; font-weight: 600; }
+        .deletions { color: #ef4444; font-weight: 600; }
+
+        /* Issues & PRs */
+        .issue-item {
+            padding: 16px 24px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            gap: 16px;
+        }
+        .issue-item:last-child { border-bottom: none; }
+        .issue-icon {
+            width: 20px;
+            height: 20px;
+            margin-top: 4px;
+            color: #10b981;
+        }
+        .issue-content { flex: 1; }
+        .issue-title {
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        .issue-title:hover { color: #6366f1; }
+        .issue-desc {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .labels {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .label {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        .label.bug { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+        .label.enhancement { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+        .label.performance { background: #fff7ed; color: #ea580c; border-color: #fed7aa; }
+        .priority-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            color: white;
+            text-transform: uppercase;
+        }
+        .priority-critical { background: #ef4444; }
+        .priority-high { background: #f97316; }
+        .priority-medium { background: #eab308; }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 40px 0 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center; margin-bottom: 32px; color: #0f172a; font-size: 36px;">
+            🎨 GitHub Repository Viewer - UI Preview
+        </h1>
+
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-top">
+                <div class="repo-info">
+                    <span class="repo-icon">📦</span>
+                    <h2 class="repo-title">
+                        <span class="repo-owner">Syndnet-CRE /</span> realestate_operations_dashboard
+                    </h2>
+                    <p class="repo-desc">
+                        A modern React-based project for real estate operations management with comprehensive deal tracking and analytics
+                    </p>
+                    <div class="topics">
+                        <span class="topic">react</span>
+                        <span class="topic">real-estate</span>
+                        <span class="topic">dashboard</span>
+                        <span class="topic">tailwindcss</span>
+                        <span class="topic">vite</span>
+                    </div>
+                </div>
+                <div class="stats">
+                    <div class="stat-item">
+                        ⭐ <strong>156</strong> <span>Stars</span>
+                    </div>
+                    <div class="stat-item">
+                        🔱 <strong>42</strong> <span>Forks</span>
+                    </div>
+                    <div class="stat-item">
+                        👁️ <strong>23</strong> <span>Watching</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NAVIGATION TABS -->
+        <div class="tabs">
+            <div class="tab active">📄 Code</div>
+            <div class="tab">⚠️ Issues <span class="badge">8</span></div>
+            <div class="tab">🔀 Pull Requests <span class="badge">3</span></div>
+            <div class="tab">📝 Commits</div>
+            <div class="tab">📖 README</div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="content">
+            <!-- SIDEBAR -->
+            <div class="sidebar">
+                <div class="sidebar-header">About</div>
+                <div class="sidebar-content">
+                    <div class="info-item">
+                        <div style="flex-shrink: 0;">🌿</div>
+                        <div>
+                            <div class="info-label">Default Branch</div>
+                            <div class="info-value">main</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div style="flex-shrink: 0;">🏷️</div>
+                        <div>
+                            <div class="info-label">Language</div>
+                            <div class="info-value">JavaScript</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div style="flex-shrink: 0;">⚖️</div>
+                        <div>
+                            <div class="info-label">License</div>
+                            <div class="info-value">MIT</div>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div style="flex-shrink: 0;">💾</div>
+                        <div>
+                            <div class="info-label">Size</div>
+                            <div class="info-value">2.4 MB</div>
+                        </div>
+                    </div>
+                    <div class="divider"></div>
+                    <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 16px;">Contributors</h3>
+                    <div class="contributors">
+                        <div class="avatar">A</div>
+                        <div class="avatar">B</div>
+                        <div class="avatar">C</div>
+                        <div class="avatar">D</div>
+                        <div class="avatar more">+12</div>
+                    </div>
+                    <div class="divider"></div>
+                    <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 16px;">Activity</h3>
+                    <div style="display: flex; justify-content: space-between; font-size: 14px;">
+                        <span style="color: #64748b;">Commits this month</span>
+                        <strong>127</strong>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MAIN CONTENT AREA -->
+            <div class="main-content">
+                <!-- FILE BROWSER -->
+                <div class="section-title">📄 Code Tab - File Browser</div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="breadcrumb">
+                            <span style="font-weight: 600;">root</span> <span>›</span> <span>src</span>
+                        </div>
+                        <button style="padding: 6px 12px; background: #f1f5f9; border: none; border-radius: 6px; cursor: pointer;">Latest commit</button>
+                    </div>
+                    <div class="file-list">
+                        <div class="file-item">
+                            <span class="file-icon">📁</span>
+                            <span class="file-name">components</span>
+                            <span class="file-meta"></span>
+                        </div>
+                        <div class="file-item">
+                            <span class="file-icon">📁</span>
+                            <span class="file-name">pages</span>
+                            <span class="file-meta"></span>
+                        </div>
+                        <div class="file-item">
+                            <span class="file-icon">📄</span>
+                            <span class="file-name">App.jsx</span>
+                            <span class="file-meta">2.4 KB</span>
+                            <span class="file-meta">2 hours ago</span>
+                        </div>
+                        <div class="file-item">
+                            <span class="file-icon">📄</span>
+                            <span class="file-name">Routes.jsx</span>
+                            <span class="file-meta">1.8 KB</span>
+                            <span class="file-meta">1 day ago</span>
+                        </div>
+                        <div class="file-item">
+                            <span class="file-icon">📋</span>
+                            <span class="file-name">package.json</span>
+                            <span class="file-meta">1.6 KB</span>
+                            <span class="file-meta">5 days ago</span>
+                        </div>
+                        <div class="file-item">
+                            <span class="file-icon">📝</span>
+                            <span class="file-name">README.md</span>
+                            <span class="file-meta">2.9 KB</span>
+                            <span class="file-meta">1 day ago</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COMMITS -->
+                <div class="section-title">📝 Commits Tab</div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">📝 Commit History</span>
+                        <span style="color: #64748b; font-size: 14px;">4 commits</span>
+                    </div>
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <div class="commit-avatar">JD</div>
+                            <div class="commit-content">
+                                <div class="commit-message">Latest code updated</div>
+                                <div class="commit-desc">Updated all components with latest features and bug fixes</div>
+                                <div class="commit-meta">
+                                    <span>👤 John Developer</span>
+                                    <span>📅 2 hours ago</span>
+                                </div>
+                            </div>
+                            <div class="commit-stats">
+                                <div class="commit-hash">#e7a7028</div>
+                                <div class="commit-changes">
+                                    <span class="additions">+145</span>
+                                    <span class="deletions">-23</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <div class="commit-avatar">JS</div>
+                            <div class="commit-content">
+                                <div class="commit-message">Initial commit with README</div>
+                                <div class="commit-desc">Added comprehensive README with project documentation</div>
+                                <div class="commit-meta">
+                                    <span>👤 Jane Smith</span>
+                                    <span>📅 2 days ago</span>
+                                </div>
+                            </div>
+                            <div class="commit-stats">
+                                <div class="commit-hash">#e837c5e</div>
+                                <div class="commit-changes">
+                                    <span class="additions">+234</span>
+                                    <span class="deletions">-0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ISSUES -->
+                <div class="section-title">⚠️ Issues Tab</div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">⚠️ Issues</span>
+                        <button style="padding: 8px 16px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">New Issue</button>
+                    </div>
+                    <div class="issue-item">
+                        <div class="issue-icon">⚠️</div>
+                        <div class="issue-content">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div class="issue-title">Add support for dark mode in all components</div>
+                                <span class="priority-badge priority-high">HIGH</span>
+                            </div>
+                            <div class="issue-desc">
+                                Need to implement dark mode theme across all UI components for better user experience
+                            </div>
+                            <div class="labels">
+                                <span class="label enhancement">enhancement</span>
+                                <span class="label" style="background: #f5f3ff; color: #7c3aed; border-color: #ddd6fe;">ui</span>
+                            </div>
+                            <div class="commit-meta">
+                                <span>#1</span>
+                                <span>👤 Sarah Williams</span>
+                                <span>📅 opened 3 hours ago</span>
+                                <span>💬 5 comments</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="issue-item">
+                        <div class="issue-icon">⚠️</div>
+                        <div class="issue-content">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div class="issue-title">Fix responsive layout on mobile devices</div>
+                                <span class="priority-badge priority-critical">CRITICAL</span>
+                            </div>
+                            <div class="issue-desc">
+                                The layout breaks on screens smaller than 768px
+                            </div>
+                            <div class="labels">
+                                <span class="label bug">bug</span>
+                                <span class="label" style="background: #fce7f3; color: #be185d; border-color: #fbcfe8;">responsive</span>
+                            </div>
+                            <div class="commit-meta">
+                                <span>#2</span>
+                                <span>👤 Mike Johnson</span>
+                                <span>📅 opened 1 day ago</span>
+                                <span>💬 12 comments</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PULL REQUESTS -->
+                <div class="section-title">🔀 Pull Requests Tab</div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">🔀 Pull Requests</span>
+                        <button style="padding: 8px 16px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">New Pull Request</button>
+                    </div>
+                    <div class="issue-item">
+                        <div class="issue-icon" style="color: #10b981;">🔀</div>
+                        <div class="issue-content">
+                            <div class="issue-title">Add GitHub repository viewer component</div>
+                            <div class="issue-desc">
+                                Implement a comprehensive GitHub repository viewer with file browser, commit history, and issues tracking
+                            </div>
+                            <div style="font-family: monospace; font-size: 12px; color: #64748b; margin-bottom: 12px;">
+                                🌿 feature/github-viewer → main
+                            </div>
+                            <div class="labels">
+                                <span class="label" style="background: #d1fae5; color: #059669; border-color: #a7f3d0;">✓ All checks passed (5/5)</span>
+                                <span class="label" style="background: #d1fae5; color: #059669; border-color: #a7f3d0;">✓ Approved (1)</span>
+                            </div>
+                            <div class="commit-meta">
+                                <span>#42</span>
+                                <span>👤 John Developer</span>
+                                <span>📅 opened 2 hours ago</span>
+                                <span>💬 3 comments</span>
+                                <span style="font-weight: 600;">8 commits</span>
+                                <span class="additions">+856</span>
+                                <span class="deletions">-23</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 60px; padding: 40px; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); border-radius: 12px; color: white; text-align: center;">
+            <h2 style="font-size: 28px; margin-bottom: 16px;">🚀 This is Your Live Frontend!</h2>
+            <p style="font-size: 16px; opacity: 0.9; margin-bottom: 24px;">
+                Fully interactive GitHub repository viewer with file browsing, commit tracking, issues management, and pull request reviews.
+            </p>
+            <p style="font-size: 14px; opacity: 0.8;">
+                Built with React 18, Vite, TailwindCSS, and Lucide Icons
+            </p>
+        </div>
+    </div>
+</body>
+</html>
