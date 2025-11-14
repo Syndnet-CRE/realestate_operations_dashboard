@@ -3,7 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - claude/create-git-frontend-011CUyigQXPSjMmqn5kuzePb
+      - main
   workflow_dispatch:
 
 permissions:
