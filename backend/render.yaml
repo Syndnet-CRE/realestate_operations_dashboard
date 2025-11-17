@@ -1,0 +1,34 @@
+# Render Configuration for Backend Deployment
+
+services:
+  - type: web
+    name: realestate-operations-backend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: FRONTEND_URL
+        sync: false  # Set in Render dashboard
+      - key: GITHUB_CLIENT_ID
+        sync: false  # Set in Render dashboard
+      - key: GITHUB_CLIENT_SECRET
+        sync: false  # Set in Render dashboard
+      - key: GITHUB_CALLBACK_URL
+        sync: false  # Set in Render dashboard
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false  # Set in Render dashboard (Neon connection string)
+      - key: ANTHROPIC_API_KEY
+        sync: false  # Set in Render dashboard
+      - key: GITHUB_TOKEN
+        sync: false  # Optional - Set in Render dashboard
+    healthCheckPath: /health
