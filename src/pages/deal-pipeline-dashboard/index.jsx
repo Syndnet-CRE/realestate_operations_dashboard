@@ -7,12 +7,16 @@ import MetricsOverview from './components/MetricsOverview';
 import PipelineKanban from './components/PipelineKanban';
 import DealsDataTable from './components/DealsDataTable';
 import FilterSidebar from './components/FilterSidebar';
+import realEstateService from '../../services/realEstateService';
+import authService from '../../services/authService';
 
 const DealPipelineDashboard = () => {
   const navigate = useNavigate();
-  const [userRole] = useState('acquisition_manager'); // Mock user role
+  const [userRole] = useState('acquisition_manager');
   const [selectedDeals, setSelectedDeals] = useState([]);
   const [syncStatus, setSyncStatus] = useState('synced');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     stages: [],
     propertyTypes: [],
@@ -22,163 +26,132 @@ const DealPipelineDashboard = () => {
     dateRange: { start: '', end: '' }
   });
 
-  // Mock data for deals
-  const [deals] = useState([
-    {
-      id: 1,
-      dealId: 'SP-2024-001',
-      propertyAddress: '123 Sunset Plaza Drive',
-      city: 'Los Angeles',
-      state: 'CA',
-      propertyType: 'Commercial',
-      stage: 'active',
-      value: 2500000,
-      roi: 18.5,
-      assignedTo: 'John Doe',
-      progress: 65,
-      priority: 'high',
-      lastUpdated: '2024-01-15T10:30:00Z',
-      nextAction: {
-        title: 'Due Diligence Review',
-        dueDate: '2024-01-20T17:00:00Z'
-      },
-      hasDocuments: true,
-      hasComments: true,
-      isUrgent: true
-    },
-    {
-      id: 2,
-      dealId: 'MB-2024-002',
-      propertyAddress: '456 Marina Bay Complex',
-      city: 'San Francisco',
-      state: 'CA',
-      propertyType: 'Mixed-Use',
-      stage: 'underwriting',
-      value: 4200000,
-      roi: 22.3,
-      assignedTo: 'Sarah Johnson',
-      progress: 40,
-      priority: 'medium',
-      lastUpdated: '2024-01-14T14:20:00Z',
-      nextAction: {
-        title: 'Financial Analysis',
-        dueDate: '2024-01-18T12:00:00Z'
-      },
-      hasDocuments: true,
-      hasComments: false,
-      isUrgent: false
-    },
-    {
-      id: 3,
-      dealId: 'DOC-2024-003',
-      propertyAddress: '789 Downtown Office Tower',
-      city: 'Seattle',
-      state: 'WA',
-      propertyType: 'Commercial',
-      stage: 'pending',
-      value: 6800000,
-      roi: 15.2,
-      assignedTo: 'Mike Chen',
-      progress: 85,
-      priority: 'high',
-      lastUpdated: '2024-01-13T09:15:00Z',
-      nextAction: {
-        title: 'Board Approval',
-        dueDate: '2024-01-16T16:00:00Z'
-      },
-      hasDocuments: true,
-      hasComments: true,
-      isUrgent: true
-    },
-    {
-      id: 4,
-      dealId: 'RH-2024-004',
-      propertyAddress: '321 Residential Heights',
-      city: 'Austin',
-      state: 'TX',
-      propertyType: 'Residential',
-      stage: 'pipeline',
-      value: 1200000,
-      roi: 12.8,
-      assignedTo: 'Lisa Wang',
-      progress: 20,
-      priority: 'low',
-      lastUpdated: '2024-01-12T16:45:00Z',
-      nextAction: {
-        title: 'Initial Assessment',
-        dueDate: '2024-01-22T10:00:00Z'
-      },
-      hasDocuments: false,
-      hasComments: false,
-      isUrgent: false
-    },
-    {
-      id: 5,
-      dealId: 'IC-2024-005',
-      propertyAddress: '654 Industrial Center',
-      city: 'Phoenix',
-      state: 'AZ',
-      propertyType: 'Industrial',
-      stage: 'approved',
-      value: 3100000,
-      roi: 19.7,
-      assignedTo: 'David Brown',
-      progress: 95,
-      priority: 'medium',
-      lastUpdated: '2024-01-11T11:30:00Z',
-      nextAction: {
-        title: 'Closing Preparation',
-        dueDate: '2024-01-17T14:00:00Z'
-      },
-      hasDocuments: true,
-      hasComments: true,
-      isUrgent: false
-    },
-    {
-      id: 6,
-      dealId: 'RM-2024-006',
-      propertyAddress: '987 Retail Mall Plaza',
-      city: 'Denver',
-      state: 'CO',
-      propertyType: 'Retail',
-      stage: 'closed',
-      value: 5500000,
-      roi: 16.4,
-      assignedTo: 'John Doe',
-      progress: 100,
-      priority: 'medium',
-      lastUpdated: '2024-01-10T13:20:00Z',
-      nextAction: null,
-      hasDocuments: true,
-      hasComments: false,
-      isUrgent: false
-    }
-  ]);
-
-  // Mock metrics data
-  const [metrics] = useState({
-    totalPipelineValue: 23300000,
-    totalValueChange: 8.5,
-    weightedPipelineValue: 18640000,
-    activeDeals: 24,
-    activeDealsChange: 12.3,
-    newDealsThisWeek: 3,
-    dealsClosedMonth: 8,
-    dealsClosedChange: 15.7,
-    avgDealSize: 2900000,
-    avgDealSizeChange: -2.1,
-    conversionRate: 14.2,
-    conversionRateChange: 3.8,
-    pipelineVelocity: 42,
-    pipelineVelocityChange: -5.2
+  // Real data from API
+  const [deals, setDeals] = useState([]);
+  const [metrics, setMetrics] = useState({
+    totalPipelineValue: 0,
+    totalValueChange: 0,
+    weightedPipelineValue: 0,
+    activeDeals: 0,
+    activeDealsChange: 0,
+    newDealsThisWeek: 0,
+    dealsClosedMonth: 0,
+    dealsClosedChange: 0,
+    avgDealSize: 0,
+    avgDealSizeChange: 0,
+    conversionRate: 0,
+    conversionRateChange: 0,
+    pipelineVelocity: 0,
+    pipelineVelocityChange: 0
   });
 
-  // Mock saved filter presets
+  // Saved filter presets (could be stored in backend later)
   const [savedPresets] = useState([
     { id: 1, name: 'High Value Deals', filters: { valueRange: { min: '5000000', max: '' } } },
     { id: 2, name: 'My Active Deals', filters: { stages: ['active'], teamMembers: ['john_doe'] } },
     { id: 3, name: 'Urgent This Week', filters: { priorities: ['high'], dateRange: { start: '2024-01-15', end: '2024-01-21' } } }
   ]);
+
+  // Fetch deals and metrics from API
+  useEffect(() => {
+    const fetchData = async () => {
+      // Check authentication
+      if (!authService.isAuthenticated()) {
+        navigate('/');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Build filter parameters
+        const filterParams = {};
+        if (filters.stages.length > 0) {
+          filterParams.stage = filters.stages.join(',');
+        }
+
+        // Fetch deals and metrics in parallel
+        const [dealsData, metricsData] = await Promise.all([
+          realEstateService.getDeals(filterParams),
+          realEstateService.getDealStats()
+        ]);
+
+        // Transform deals to match component format
+        const transformedDeals = (dealsData.deals || []).map(deal => ({
+          id: deal.id,
+          dealId: deal.deal_name || `DEAL-${deal.id}`,
+          propertyAddress: deal.property_address || 'N/A',
+          city: deal.city || '',
+          state: deal.state || '',
+          propertyType: deal.property_type || 'Unknown',
+          stage: deal.stage || 'pipeline',
+          value: parseFloat(deal.purchase_price) || 0,
+          roi: parseFloat(deal.roi) || 0,
+          assignedTo: deal.assigned_to_name || 'Unassigned',
+          progress: calculateProgress(deal.stage),
+          priority: determinePriority(deal),
+          lastUpdated: deal.updated_at || deal.created_at,
+          nextAction: {
+            title: getNextAction(deal.stage),
+            dueDate: deal.expected_closing_date
+          },
+          hasDocuments: deal.document_count > 0,
+          hasComments: deal.note_count > 0,
+          isUrgent: isUrgent(deal.expected_closing_date)
+        }));
+
+        setDeals(transformedDeals);
+        setMetrics(metricsData || metrics);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError(err.message || 'Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [filters, navigate]);
+
+  // Helper functions for deal transformation
+  const calculateProgress = (stage) => {
+    const stageProgress = {
+      'lead': 10,
+      'qualified': 25,
+      'under_contract': 50,
+      'due_diligence': 70,
+      'closing': 90,
+      'closed': 100,
+      'dead': 0
+    };
+    return stageProgress[stage] || 0;
+  };
+
+  const determinePriority = (deal) => {
+    if (deal.purchase_price > 5000000) return 'high';
+    if (deal.purchase_price > 2000000) return 'medium';
+    return 'low';
+  };
+
+  const getNextAction = (stage) => {
+    const actions = {
+      'lead': 'Initial Assessment',
+      'qualified': 'Financial Analysis',
+      'under_contract': 'Due Diligence Review',
+      'due_diligence': 'Inspection & Appraisal',
+      'closing': 'Closing Preparation',
+      'closed': 'Post-Closing',
+      'dead': 'Archived'
+    };
+    return actions[stage] || 'Follow up';
+  };
+
+  const isUrgent = (closingDate) => {
+    if (!closingDate) return false;
+    const daysUntil = Math.floor((new Date(closingDate) - new Date()) / (1000 * 60 * 60 * 24));
+    return daysUntil <= 7 && daysUntil >= 0;
+  };
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -226,17 +199,83 @@ const DealPipelineDashboard = () => {
     // Implement export functionality
   };
 
-  const handleSync = () => {
+  const handleSync = async () => {
     setSyncStatus('syncing');
-    // Simulate sync process
-    setTimeout(() => {
+    try {
+      // Build filter parameters
+      const filterParams = {};
+      if (filters.stages.length > 0) {
+        filterParams.stage = filters.stages.join(',');
+      }
+
+      // Fetch fresh data
+      const [dealsData, metricsData] = await Promise.all([
+        realEstateService.getDeals(filterParams),
+        realEstateService.getDealStats()
+      ]);
+
+      // Transform and update deals
+      const transformedDeals = (dealsData.deals || []).map(deal => ({
+        id: deal.id,
+        dealId: deal.deal_name || `DEAL-${deal.id}`,
+        propertyAddress: deal.property_address || 'N/A',
+        city: deal.city || '',
+        state: deal.state || '',
+        propertyType: deal.property_type || 'Unknown',
+        stage: deal.stage || 'pipeline',
+        value: parseFloat(deal.purchase_price) || 0,
+        roi: parseFloat(deal.roi) || 0,
+        assignedTo: deal.assigned_to_name || 'Unassigned',
+        progress: calculateProgress(deal.stage),
+        priority: determinePriority(deal),
+        lastUpdated: deal.updated_at || deal.created_at,
+        nextAction: {
+          title: getNextAction(deal.stage),
+          dueDate: deal.expected_closing_date
+        },
+        hasDocuments: deal.document_count > 0,
+        hasComments: deal.note_count > 0,
+        isUrgent: isUrgent(deal.expected_closing_date)
+      }));
+
+      setDeals(transformedDeals);
+      setMetrics(metricsData || metrics);
       setSyncStatus('synced');
-    }, 2000);
+    } catch (err) {
+      console.error('Sync error:', err);
+      setSyncStatus('error');
+      setTimeout(() => setSyncStatus('synced'), 3000);
+    }
   };
 
-  const handleDealMove = (dealId, newStage) => {
-    console.log('Moving deal', dealId, 'to stage', newStage);
-    // Implement deal stage update
+  const handleDealMove = async (dealId, newStage) => {
+    try {
+      // Update deal stage in backend
+      await realEstateService.updateDealStage(dealId, newStage);
+
+      // Optimistically update local state
+      setDeals(prevDeals =>
+        prevDeals.map(deal =>
+          deal.id === dealId
+            ? {
+                ...deal,
+                stage: newStage,
+                progress: calculateProgress(newStage),
+                lastUpdated: new Date().toISOString()
+              }
+            : deal
+        )
+      );
+
+      // Refresh metrics
+      const metricsData = await realEstateService.getDealStats();
+      setMetrics(metricsData || metrics);
+    } catch (err) {
+      console.error('Error moving deal:', err);
+      alert('Failed to update deal stage. Please try again.');
+      // Refresh data to revert optimistic update
+      handleSync();
+    }
   };
 
   const handleDealClick = (deal) => {
@@ -269,11 +308,52 @@ const DealPipelineDashboard = () => {
   const totalDeals = deals.length;
   const activeDeals = deals.filter(deal => ['active', 'underwriting', 'pending'].includes(deal.stage)).length;
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <Sidebar />
+        <main className="main-content-offset flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto"></div>
+            <p className="mt-4 text-slate-600 font-medium">Loading deals...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <Sidebar />
+        <main className="main-content-offset flex items-center justify-center">
+          <div className="max-w-md text-center">
+            <div className="bg-white rounded-lg shadow-lg p-8 border border-red-200">
+              <div className="text-red-500 text-5xl mb-4">⚠️</div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">Error Loading Dashboard</h2>
+              <p className="text-slate-600 mb-6">{error}</p>
+              <button
+                onClick={handleSync}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <Sidebar />
-      
+
       <main className="main-content-offset">
         <DashboardHeader
           onSearch={handleSearch}
@@ -297,7 +377,7 @@ const DealPipelineDashboard = () => {
 
           <div className="flex-1 p-6">
             <MetricsOverview metrics={metrics} userRole={userRole} />
-            
+
             <div className="space-y-8">
               <PipelineKanban
                 deals={deals}

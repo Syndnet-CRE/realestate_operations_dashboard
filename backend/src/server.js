@@ -8,6 +8,10 @@ import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth.js';
 import githubRoutes from './routes/github.js';
 import aiRoutes from './routes/ai.js';
+import propertiesRoutes from './routes/properties.js';
+import dealsRoutes from './routes/deals.js';
+import contactsRoutes from './routes/contacts.js';
+import tasksRoutes from './routes/tasks.js';
 
 // Import database
 import pool from './config/database.js';
@@ -64,6 +68,10 @@ app.get('/health', async (req, res) => {
 app.use('/auth', authRoutes);
 app.use('/api/github', githubRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/properties', propertiesRoutes);
+app.use('/api/deals', dealsRoutes);
+app.use('/api/contacts', contactsRoutes);
+app.use('/api/tasks', tasksRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

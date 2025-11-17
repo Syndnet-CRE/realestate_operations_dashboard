@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
@@ -10,13 +10,24 @@ import StageRequirements from './components/StageRequirements';
 import TeamAssignments from './components/TeamAssignments';
 import DocumentViewer from './components/DocumentViewer';
 import BulkOperations from './components/BulkOperations';
+import realEstateService from '../../services/realEstateService';
+import authService from '../../services/authService';
 
 const PropertyAcquisitionWorkflow = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [currentStage, setCurrentStage] = useState(2);
   const [selectedProperties, setSelectedProperties] = useState([]);
   const [activeTab, setActiveTab] = useState('requirements');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [properties, setProperties] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [documents, setDocuments] = useState([]);
+
+  // Get property ID from URL params
+  const propertyId = searchParams.get('property');
 
   const workflowStages = [
     {
@@ -57,254 +68,129 @@ const PropertyAcquisitionWorkflow = () => {
     }
   ];
 
-  const mockProperties = [
-    {
-      id: 'SP-2024-001',
-      name: 'Sunset Plaza Acquisition',
-      address: '123 Sunset Boulevard, Los Angeles, CA',
-      price: '$2,500,000',
-      stage: 'due-diligence',
-      priority: 'high',
-      daysInStage: 8,
-      nextDeadline: 'Jan 25, 2025'
-    },
-    {
-      id: 'MB-2024-002',
-      name: 'Marina Bay Office Complex',
-      address: '456 Harbor Drive, San Francisco, CA',
-      price: '$4,200,000',
-      stage: 'analysis',
-      priority: 'medium',
-      daysInStage: 12,
-      nextDeadline: 'Jan 30, 2025'
-    },
-    {
-      id: 'DT-2024-003',
-      name: 'Downtown Retail Center',
-      address: '789 Main Street, Seattle, WA',
-      price: '$1,800,000',
-      stage: 'approval',
-      priority: 'low',
-      daysInStage: 3,
-      nextDeadline: 'Feb 5, 2025'
-    },
-    {
-      id: 'GV-2024-004',
-      name: 'Green Valley Apartments',
-      address: '321 Oak Avenue, Portland, OR',
-      price: '$3,100,000',
-      stage: 'identification',
-      priority: 'medium',
-      daysInStage: 2,
-      nextDeadline: 'Jan 28, 2025'
-    },
-    {
-      id: 'RC-2024-005',
-      name: 'Riverside Commercial',
-      address: '654 River Road, Denver, CO',
-      price: '$2,900,000',
-      stage: 'closing',
-      priority: 'high',
-      daysInStage: 15,
-      nextDeadline: 'Jan 22, 2025'
-    }
-  ];
-
-  const mockRequirements = [
-    {
-      id: 1,
-      title: 'Property Appraisal Report',
-      description: 'Independent third-party appraisal of property value',
-      type: 'document',
-      completed: true,
-      priority: 'high',
-      assignee: 'Sarah Johnson',
-      dueDate: 'Jan 20, 2025',
-      documents: ['appraisal_report.pdf']
-    },
-    {
-      id: 2,
-      title: 'Environmental Assessment',
-      description: 'Phase I Environmental Site Assessment',
-      type: 'document',
-      completed: false,
-      priority: 'high',
-      assignee: 'Michael Chen',
-      dueDate: 'Jan 25, 2025'
-    },
-    {
-      id: 3,
-      title: 'Financial Analysis Review',
-      description: 'Complete financial modeling and cash flow analysis',
-      type: 'financial',
-      completed: true,
-      priority: 'medium',
-      assignee: 'Emily Rodriguez',
-      dueDate: 'Jan 18, 2025'
-    },
-    {
-      id: 4,
-      title: 'Legal Document Review',
-      description: 'Review all legal documents and contracts',
-      type: 'approval',
-      completed: false,
-      priority: 'high',
-      assignee: 'David Kim',
-      dueDate: 'Jan 26, 2025'
-    },
-    {
-      id: 5,
-      title: 'Property Inspection',
-      description: 'Comprehensive structural and systems inspection',
-      type: 'inspection',
-      completed: false,
-      priority: 'medium',
-      assignee: 'Lisa Thompson',
-      dueDate: 'Jan 24, 2025'
-    },
-    {
-      id: 6,
-      title: 'Title Search Verification',
-      description: 'Verify clear title and identify any liens',
-      type: 'checklist',
-      completed: true,
-      priority: 'high',
-      assignee: 'David Kim',
-      dueDate: 'Jan 15, 2025'
-    }
-  ];
-
-  const mockAssignments = [
-    {
-      id: 1,
-      task: 'Complete Environmental Assessment Report',
-      assignee: {
-        name: 'Michael Chen',
-        role: 'Due Diligence Specialist',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'
-      },
-      status: 'in-progress',
-      priority: 'high',
-      dueDate: 'Jan 25, 2025',
-      progress: 65
-    },
-    {
-      id: 2,
-      task: 'Legal Document Review and Analysis',
-      assignee: {
-        name: 'David Kim',
-        role: 'Legal Counsel',
-        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150'
-      },
-      status: 'pending',
-      priority: 'high',
-      dueDate: 'Jan 26, 2025',
-      progress: 0
-    },
-    {
-      id: 3,
-      task: 'Property Inspection Coordination',
-      assignee: {
-        name: 'Lisa Thompson',
-        role: 'Property Inspector',
-        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150'
-      },
-      status: 'overdue',
-      priority: 'medium',
-      dueDate: 'Jan 20, 2025',
-      progress: 30
-    },
-    {
-      id: 4,
-      task: 'Financial Model Validation',
-      assignee: {
-        name: 'Emily Rodriguez',
-        role: 'Financial Analyst',
-        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150'
-      },
-      status: 'completed',
-      priority: 'medium',
-      dueDate: 'Jan 18, 2025',
-      progress: 100
-    }
-  ];
-
-  const mockDocuments = [
-    {
-      id: 1,
-      name: 'Property Appraisal Report - Sunset Plaza',
-      type: 'pdf',
-      size: 2456789,
-      category: 'appraisal',
-      status: 'approved',
-      uploadDate: 'Jan 15, 2025',
-      uploadedBy: 'Sarah Johnson',
-      version: '1.2',
-      description: 'Independent third-party appraisal conducted by certified appraiser',
-      compliance: {
-        status: 'compliant',
-        message: 'Meets all regulatory requirements'
-      }
-    },
-    {
-      id: 2,
-      name: 'Environmental Site Assessment Phase I',
-      type: 'pdf',
-      size: 5234567,
-      category: 'environmental',
-      status: 'pending',
-      uploadDate: 'Jan 22, 2025',
-      uploadedBy: 'Michael Chen',
-      version: '1.0',
-      description: 'Phase I Environmental Site Assessment report',
-      compliance: {
-        status: 'review',
-        message: 'Under compliance review'
-      }
-    },
-    {
-      id: 3,
-      name: 'Financial Analysis Model',
-      type: 'xlsx',
-      size: 1234567,
-      category: 'financial',
-      status: 'approved',
-      uploadDate: 'Jan 18, 2025',
-      uploadedBy: 'Emily Rodriguez',
-      version: '2.1',
-      description: 'Comprehensive financial modeling and cash flow projections'
-    },
-    {
-      id: 4,
-      name: 'Legal Due Diligence Checklist',
-      type: 'docx',
-      size: 567890,
-      category: 'legal',
-      status: 'review',
-      uploadDate: 'Jan 20, 2025',
-      uploadedBy: 'David Kim',
-      version: '1.0',
-      description: 'Legal review checklist and findings'
-    },
-    {
-      id: 5,
-      name: 'Property Inspection Photos',
-      type: 'jpg',
-      size: 8901234,
-      category: 'inspection',
-      status: 'approved',
-      uploadDate: 'Jan 19, 2025',
-      uploadedBy: 'Lisa Thompson',
-      version: '1.0',
-      description: 'Comprehensive property inspection photographs'
-    }
-  ];
-
+  // Fetch properties, tasks, and documents from API
   useEffect(() => {
-    if (mockProperties.length > 0 && !selectedProperty) {
-      setSelectedProperty(mockProperties[0]);
-    }
-  }, [selectedProperty]);
+    const fetchData = async () => {
+      // Check authentication
+      if (!authService.isAuthenticated()) {
+        navigate('/');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch properties (deals) and tasks in parallel
+        const [propertiesData, tasksData] = await Promise.all([
+          realEstateService.getDeals(),
+          realEstateService.getTasks({ limit: 50 })
+        ]);
+
+        // Transform properties to match component format
+        const transformedProperties = (propertiesData.deals || []).map(deal => ({
+          id: deal.id,
+          name: deal.deal_name || `Deal ${deal.id}`,
+          address: deal.property_address || 'N/A',
+          price: `$${parseFloat(deal.purchase_price || 0).toLocaleString()}`,
+          stage: mapStageToWorkflow(deal.stage),
+          priority: determinePriority(deal),
+          daysInStage: calculateDaysInStage(deal.updated_at),
+          nextDeadline: formatDate(deal.expected_closing_date)
+        }));
+
+        setProperties(transformedProperties);
+
+        // Transform tasks
+        const transformedTasks = (tasksData.tasks || []).map(task => ({
+          id: task.id,
+          title: task.title,
+          description: task.description,
+          type: task.task_type || 'document',
+          completed: task.status === 'completed',
+          priority: task.priority || 'medium',
+          assignee: task.assigned_to_name || 'Unassigned',
+          dueDate: formatDate(task.due_date)
+        }));
+
+        setTasks(transformedTasks);
+
+        // Set first property as selected if we have one
+        if (transformedProperties.length > 0) {
+          if (propertyId) {
+            const property = transformedProperties.find(p => p.id === parseInt(propertyId));
+            setSelectedProperty(property || transformedProperties[0]);
+          } else {
+            setSelectedProperty(transformedProperties[0]);
+          }
+        }
+
+        // Fetch documents if we have a selected property
+        if (propertyId) {
+          try {
+            const docsData = await realEstateService.getDocuments({ property_id: propertyId });
+            const transformedDocs = (docsData.documents || []).map(doc => ({
+              id: doc.id,
+              name: doc.file_name,
+              type: doc.file_type || 'pdf',
+              size: doc.file_size || 0,
+              category: doc.document_type || 'general',
+              status: doc.status || 'pending',
+              uploadDate: formatDate(doc.uploaded_at),
+              uploadedBy: doc.uploaded_by_name || 'Unknown',
+              version: doc.version || '1.0',
+              description: doc.description || ''
+            }));
+            setDocuments(transformedDocs);
+          } catch (err) {
+            console.error('Error fetching documents:', err);
+            // Don't fail the whole page if documents fail
+            setDocuments([]);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching property acquisition data:', err);
+        setError(err.message || 'Failed to load property data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [propertyId, navigate]);
+
+  // Helper functions
+  const mapStageToWorkflow = (dealStage) => {
+    const stageMap = {
+      'lead': 'identification',
+      'qualified': 'identification',
+      'under_contract': 'analysis',
+      'due_diligence': 'due-diligence',
+      'closing': 'approval',
+      'closed': 'closing',
+      'dead': 'identification'
+    };
+    return stageMap[dealStage] || 'identification';
+  };
+
+  const determinePriority = (deal) => {
+    const price = parseFloat(deal.purchase_price || 0);
+    if (price > 3000000) return 'high';
+    if (price > 1500000) return 'medium';
+    return 'low';
+  };
+
+  const calculateDaysInStage = (updatedAt) => {
+    if (!updatedAt) return 0;
+    const diff = Date.now() - new Date(updatedAt).getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
   const handlePropertySelect = (property) => {
     setSelectedProperty(property);
@@ -360,11 +246,52 @@ const PropertyAcquisitionWorkflow = () => {
     { id: 'bulk', label: 'Bulk Ops', icon: 'Layers' }
   ];
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Sidebar />
+        <Header />
+        <main className="main-content-offset pt-16 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto"></div>
+            <p className="mt-4 text-slate-600 font-medium">Loading property workflow...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Sidebar />
+        <Header />
+        <main className="main-content-offset pt-16 flex items-center justify-center">
+          <div className="max-w-md text-center">
+            <div className="bg-white rounded-lg shadow-lg p-8 border border-red-200">
+              <div className="text-red-500 text-5xl mb-4">⚠️</div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">Error Loading Workflow</h2>
+              <p className="text-slate-600 mb-6">{error}</p>
+              <button
+                onClick={() => navigate('/deal-pipeline-dashboard')}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+              >
+                Back to Pipeline
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
       <Header />
-      
+
       <main className="main-content-offset pt-16">
         <div className="p-6">
           {/* Page Header */}
@@ -414,7 +341,7 @@ const PropertyAcquisitionWorkflow = () => {
             {/* Left Sidebar - Pipeline */}
             <div className="col-span-3">
               <AcquisitionPipeline
-                properties={mockProperties}
+                properties={properties}
                 selectedProperty={selectedProperty}
                 onPropertySelect={handlePropertySelect}
                 onNewProperty={handleNewProperty}
@@ -478,14 +405,14 @@ const PropertyAcquisitionWorkflow = () => {
                       {activeTab === 'requirements' && (
                         <StageRequirements
                           stage={workflowStages[currentStage]}
-                          requirements={mockRequirements}
+                          requirements={tasks}
                           onRequirementUpdate={handleRequirementUpdate}
                           onApprovalRequest={handleApprovalRequest}
                         />
                       )}
                       {activeTab === 'documents' && (
                         <DocumentViewer
-                          documents={mockDocuments}
+                          documents={documents}
                           onDocumentUpload={handleDocumentUpload}
                           onDocumentDelete={handleDocumentDelete}
                           onDocumentView={handleDocumentView}
@@ -493,7 +420,7 @@ const PropertyAcquisitionWorkflow = () => {
                       )}
                       {activeTab === 'team' && (
                         <TeamAssignments
-                          assignments={mockAssignments}
+                          assignments={tasks}
                           onAssignmentUpdate={handleAssignmentUpdate}
                           onEscalate={handleEscalate}
                         />
@@ -514,7 +441,7 @@ const PropertyAcquisitionWorkflow = () => {
             {/* Right Panel - Team Assignments */}
             <div className="col-span-3">
               <TeamAssignments
-                assignments={mockAssignments}
+                assignments={tasks}
                 onAssignmentUpdate={handleAssignmentUpdate}
                 onEscalate={handleEscalate}
               />
