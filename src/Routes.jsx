@@ -10,6 +10,7 @@ import FinancialAnalyticsDashboard from "pages/financial-analytics-dashboard";
 import ListingManagementHub from "pages/listing-management-hub";
 import DealDetailManagement from "pages/deal-detail-management";
 import GitHubRepository from "pages/github-repository";
+import AuthCallback from "pages/AuthCallback";
 import NotFound from "pages/NotFound";
 
 const Routes = () => {
@@ -27,6 +28,7 @@ const Routes = () => {
         <Route path="/listing-management-hub" element={<ListingManagementHub />} />
         <Route path="/deal-detail-management" element={<DealDetailManagement />} />
         <Route path="/github-repository" element={<GitHubRepository />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="*" element={<NotFound />} />
       </RouterRoutes>
       </ErrorBoundary>
